@@ -63,7 +63,7 @@
             border: 2px solid rgba(99, 102, 241, 0.3);
             padding: 40px 30px;
             text-align: center;
-            max-width: 380px;
+            max-width: 400px; /* 稍微加宽卡片 */
             width: 90%;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
@@ -94,7 +94,7 @@
         }
 
         .subtitle {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #fff;
             margin-bottom: 30px;
             letter-spacing: 1px;
@@ -104,11 +104,12 @@
         .card.alert-mode .title { color: rgba(239, 68, 68, 0.8); }
         .card.alert-mode .subtitle { color: rgba(239, 68, 68, 0.95); }
 
+        /* --- 修改处：扩大边框，调整高度 --- */
         .timer-box {
             position: relative;
-            width: 160px; /* 稍微加宽以容纳 MM:SS */
-            height: 140px;
-            margin: 0 auto 30px;
+            width: 200px;  /* 从 160px 扩大到 200px */
+            height: 160px; /* 从 140px 扩大到 160px */
+            margin: 0 auto 35px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -118,13 +119,15 @@
 
         .card.alert-mode .timer-box { border-color: rgba(239, 68, 68, 0.6); }
 
+        /* --- 修改处：缩小字体 --- */
         .timer-number {
-            font-size: 3.5rem; /* 稍微调小字体以适应两位数 */
+            font-size: 2.8rem; /* 从 3.5rem 缩小到 2.8rem */
             font-weight: bold;
             font-family: 'Courier New', monospace;
             color: #fff;
             letter-spacing: -1px;
             transition: color 0.3s ease;
+            line-height: 1; /* 确保垂直居中 */
         }
 
         .card.alert-mode .timer-number {
@@ -136,7 +139,7 @@
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             color: #fff;
             border: none;
-            padding: 12px 40px;
+            padding: 12px 35px;
             font-size: 0.75rem;
             font-weight: bold;
             letter-spacing: 2px;
@@ -311,13 +314,17 @@
         <div id="launchContent">
             <div class="title" id="statusTitle">SYSTEM READY</div>
             <div class="subtitle" id="statusText">30 MINUTE SEQUENCE</div>
+            
+            <!-- 计时器区域 -->
             <div class="timer-box" id="timerBox">
                 <div class="timer-number" id="timerDisplay">30:00</div>
             </div>
+            
             <div class="button-group">
                 <button class="btn btn-launch" id="launchBtn" onclick="startSequence()">INITIATE</button>
                 <button class="btn btn-cancel" id="cancelBtn" onclick="cancelSequence()" style="display:none;">ABORT</button>
             </div>
+            
             <div class="status">
                 <div class="status-dot"></div>
                 <div class="status-dot"></div>
