@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LAUNCH SEQUENCE V2</title>
+    <title>LAUNCH SEQUENCE V2 (30 MIN)</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -106,7 +106,7 @@
 
         .timer-box {
             position: relative;
-            width: 140px;
+            width: 160px; /* 稍微加宽以容纳 MM:SS */
             height: 140px;
             margin: 0 auto 30px;
             display: flex;
@@ -119,7 +119,7 @@
         .card.alert-mode .timer-box { border-color: rgba(239, 68, 68, 0.6); }
 
         .timer-number {
-            font-size: 4rem;
+            font-size: 3.5rem; /* 稍微调小字体以适应两位数 */
             font-weight: bold;
             font-family: 'Courier New', monospace;
             color: #fff;
@@ -145,6 +145,7 @@
             transition: all 0.2s ease;
             box-shadow: 0 4px 0 #4f46e5, 0 8px 25px -8px rgba(99, 102, 241, 0.4);
             font-family: 'Courier New', monospace;
+            margin: 0 5px;
         }
 
         .btn:hover {
@@ -158,8 +159,16 @@
         }
 
         .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        .btn-cancel {
+            background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+            box-shadow: 0 4px 0 #1f2937, 0 8px 25px -8px rgba(0, 0, 0, 0.4);
+        }
+        .btn-cancel:hover {
+            box-shadow: 0 6px 0 #1f2937, 0 12px 35px -8px rgba(0, 0, 0, 0.6);
+        }
 
-        .card.alert-mode .btn {
+        .card.alert-mode .btn-launch {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             box-shadow: 0 4px 0 #b91c1c, 0 8px 25px -8px rgba(239, 68, 68, 0.4);
         }
@@ -284,6 +293,12 @@
         }
         .sound-toggle:hover { background: rgba(255,255,255,0.15); color: #fff; }
         .sound-toggle.muted { opacity: 0.4; }
+        
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
@@ -295,11 +310,14 @@
     <div class="card" id="mainCard">
         <div id="launchContent">
             <div class="title" id="statusTitle">SYSTEM READY</div>
-            <div class="subtitle" id="statusText">AWAITING CONFIRMATION</div>
+            <div class="subtitle" id="statusText">30 MINUTE SEQUENCE</div>
             <div class="timer-box" id="timerBox">
-                <div class="timer-number" id="timerDisplay">10</div>
+                <div class="timer-number" id="timerDisplay">30:00</div>
             </div>
-            <button class="btn" id="launchBtn" onclick="startSequence()">INITIATE</button>
+            <div class="button-group">
+                <button class="btn btn-launch" id="launchBtn" onclick="startSequence()">INITIATE</button>
+                <button class="btn btn-cancel" id="cancelBtn" onclick="cancelSequence()" style="display:none;">ABORT</button>
+            </div>
             <div class="status">
                 <div class="status-dot"></div>
                 <div class="status-dot"></div>
@@ -344,6 +362,7 @@
     <script>
         const timerDisplay = document.getElementById('timerDisplay');
         const launchBtn = document.getElementById('launchBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
         const mainCard = document.getElementById('mainCard');
         const launchContent = document.getElementById('launchContent');
         const successContent = document.getElementById('successContent');
@@ -360,6 +379,9 @@
         let soundEnabled = true;
         let audioCtx = null;
         let alarmInterval = null;
+        let timerInterval = null;
+        let totalSeconds = 30 * 60; // 30 minutes
+        let isRunning = false;
 
         function initAudio() {
             if (!audioCtx) {
@@ -431,20 +453,27 @@
             initAudio();
         }
 
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
         function startSequence() {
+            if (isRunning) return;
             try {
                 initAudio();
+                isRunning = true;
+                
                 mainCard.classList.add('alert-mode', 'pulsing');
                 statusTitle.textContent = '⚠️ ARMED';
                 statusText.textContent = 'COUNTDOWN INITIATED';
-                launchBtn.disabled = true;
-                launchBtn.textContent = 'LAUNCHING...';
                 
-                let count = 10;
-                timerDisplay.textContent = count;
-                playAlarmTick();
+                launchBtn.style.display = 'none';
+                cancelBtn.style.display = 'inline-block';
                 
-                alarmInterval = setInterval(playAlarmTick, 1000);
+                let count = totalSeconds;
+                timerDisplay.textContent = formatTime(count);
 
                 dotInterval = setInterval(() => {
                     dots.forEach(d => d.classList.remove('active'));
@@ -452,10 +481,15 @@
                     dotIndex = (dotIndex + 1) % 3;
                 }, 300);
 
-                const timerInterval = setInterval(() => {
+                timerInterval = setInterval(() => {
                     count--;
-                    timerDisplay.textContent = count < 10 ? '0' + count : count;
+                    timerDisplay.textContent = formatTime(count);
                     
+                    // 最后10秒开始警报
+                    if (count === 10) {
+                        playAlarmTick();
+                        alarmInterval = setInterval(playAlarmTick, 1000);
+                    }
                     if (count === 5) {
                         clearInterval(alarmInterval);
                         alarmInterval = setInterval(playAlarmTick, 500);
@@ -478,12 +512,37 @@
             } catch (e) {
                 console.error("Sequence start error:", e);
                 alert("启动失败，请刷新页面重试");
+                resetUI();
             }
         }
 
+        function cancelSequence() {
+            if (!isRunning) return;
+            
+            clearInterval(timerInterval);
+            clearInterval(dotInterval);
+            if (alarmInterval) clearInterval(alarmInterval);
+            
+            resetUI();
+        }
+
+        function resetUI() {
+            isRunning = false;
+            mainCard.classList.remove('alert-mode', 'pulsing', 'shaking');
+            statusTitle.textContent = 'SYSTEM READY';
+            statusText.textContent = '30 MINUTE SEQUENCE';
+            timerDisplay.textContent = formatTime(totalSeconds);
+            launchBtn.style.display = 'inline-block';
+            launchBtn.disabled = false;
+            launchBtn.textContent = 'INITIATE';
+            cancelBtn.style.display = 'none';
+            dots.forEach(d => d.classList.remove('active'));
+        }
+
         function explode() {
-            timerDisplay.textContent = '00';
+            timerDisplay.textContent = '00:00';
             playExplosion();
+            isRunning = false;
             
             setTimeout(() => {
                 mainCard.classList.remove('shaking', 'pulsing');
